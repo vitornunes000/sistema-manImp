@@ -79,9 +79,22 @@ def MinImage():
     filename[img_no] = ("imagemin.png")
     updateimage()
 
+def MaxImage():
+    global filename, img_no
+    img = Image.open(filename[img_no])
+    width, height = img.size
+    newHeight = int (height*2)
+    newWidth = int (width*2)
+    imageMin = img.resize((newWidth,newHeight), Image.BILINEAR)
+    imageMin.save("imagemmax.png")
+    img_no = img_no + 1
+    filename[img_no] = ("imagemax.png")
+    updateimage()
+
 Button(root, text='Abrir Imagem', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=openimage).place(x=2, y=2)
 Button(root, text='Escala de Cinza', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=grayscaleimage).place(x=2, y=350)
 Button(root, text='rotacionar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=rotateimage).place(x=2, y=400)
 Button(root, text='minimizar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=MinImage).place(x=2, y=450)
+Button(root, text='maximizar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=MaxImage).place(x=2, y=500)
 
 root.mainloop()
