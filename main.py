@@ -2,6 +2,8 @@ from tkinter import *
 from PIL import ImageTk, Image, ImageEnhance, ImageFilter
 from tkinter import filedialog, messagebox
 from pathlib import Path
+import cv2 
+import numpy as np
 
 # definindo propriedades do front-end
 root = Tk()
@@ -89,6 +91,22 @@ def MaxImage():
     imageMin.save("imagemmax.png")
     img_no = img_no + 1
     filename[img_no] = ("imagemax.png")
+    updateimage()
+
+def translationImage():
+    global filename,img_no
+    imagem = cv2.imread(filename[img_no])
+
+    # Define o deslocamento desejado (25 pixels para direita e 50 pixels para baixo)
+    deslocamento = np.float32([[1, 0, 25], [0, 1, 50]])
+
+    # Aplica a translação usando o método warpAffine
+    imagem_transladada = cv2.warpAffine(imagem, deslocamento, (imagem.shape[1], imagem.shape[0]))
+
+    # salva a imagem e exiba ela na interface
+    imagem_transladada.save("imagemtransladada.png")
+    img_no = img_no +1
+    filename[img_no] = ("imagem_transladada.png")
     updateimage()
 
 Button(root, text='Abrir Imagem', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=openimage).place(x=2, y=2)
