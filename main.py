@@ -63,7 +63,7 @@ def grayscaleimage():
 def rotateimage():
     global filename, img_no
     img_rotate = Image.open(filename[img_no])
-    img_rotated = img_rotate.rotate(90)
+    img_rotated = img_rotate.rotate(90, expand=True, resample=Image.BILINEAR)
     img_no = img_no +1
     img_rotated.save(str(img_no) + '.png')
     filename[img_no] = str(img_no) + '.png'
@@ -101,10 +101,10 @@ def translationImage():
     deslocamento = np.float32([[1, 0, 25], [0, 1, 50]])
 
     # Aplica a translação usando o método warpAffine
-    imagem_transladada = cv2.warpAffine(imagem, deslocamento, (imagem.shape[1], imagem.shape[0]))
+    imagem_transladada = cv2.warpAffine(imagem, deslocamento, (imagem.shape[1]+25, imagem.shape[0]+50),cv2.INTER_LINEAR)
 
     # salva a imagem e exiba ela na interface
-    imagem_transladada.save("imagemtransladada.png")
+    cv2.imwrite("imagem_transladada.png", imagem_transladada)
     img_no = img_no +1
     filename[img_no] = ("imagem_transladada.png")
     updateimage()
@@ -114,5 +114,6 @@ Button(root, text='Escala de Cinza', height="1", width="15", bg="#04BF68", fg="#
 Button(root, text='rotacionar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=rotateimage).place(x=2, y=400)
 Button(root, text='minimizar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=MinImage).place(x=2, y=450)
 Button(root, text='maximizar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=MaxImage).place(x=2, y=500)
+Button(root, text='transladar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=translationImage).place(x=2, y=550)
 
 root.mainloop()
