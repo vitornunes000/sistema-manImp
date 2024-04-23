@@ -2,7 +2,8 @@ from tkinter import *
 from PIL import ImageTk, Image, ImageEnhance, ImageFilter
 from tkinter import filedialog, messagebox
 from pathlib import Path
-import cv2 
+import shutil
+import cv2
 import numpy as np
 
 # definindo propriedades do front-end
@@ -14,7 +15,6 @@ root.resizable(width=True, height=True)
 img_no = 0
 filename = ["" for x in range(150)]
 filename[0] = "noFile"
-panel = Label(root, image=None)
 
 def openfilename():
     file = filedialog.askopenfilename(title='abrir')
@@ -37,8 +37,8 @@ def openimage():
     img_no = img_no + 1
     filename[img_no] = "img.png"
     img = Image.open(filename[img_no])
-    img = ImageTk.PhotoImage(img)
     #front-end
+    img = ImageTk.PhotoImage(img)
     panel = Label(root, image=img)
     panel.image = img
     panel.place(x=150, y=40)
@@ -46,10 +46,24 @@ def openimage():
 def updateimage():
     global filename, img_no
     img_enhance = Image.open(filename[img_no])
+    #front-end
     img_enhance = ImageTk.PhotoImage(img_enhance)
     panel = Label(root, image=img_enhance)
-    panel.configure(image=img_enhance)  # Atualiza a imagem no Label existente
     panel.image = img_enhance
+    panel.place(x=150, y=40)
+
+def downloadimage():
+    global filename, img_no
+    # Verificando se a foto teve alterações
+    if filename[img_no] != "img.png":
+        try:
+            # Alterar o caminho da pasta download de acordo com seu PC
+            shutil.move(filename[img_no], "C:/Users/Berlatto/Downloads/" + filename[img_no])
+            messagebox.showinfo("Sucesso!", "Imagem baixada com sucesso! Verifique sua pasta de downloads.")
+        except Exception as e: 
+            messagebox.showerror("Erro", f"Erro ao baixar a imagem: {e}")
+    else:
+        messagebox.showinfo("Inalterada", "Nenhuma imagem para baixar.")
 
 def grayscaleimage():
     global filename, img_no
@@ -111,9 +125,9 @@ def translationImage():
 
 Button(root, text='Abrir Imagem', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=openimage).place(x=2, y=2)
 Button(root, text='Escala de Cinza', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=grayscaleimage).place(x=2, y=350)
-Button(root, text='rotacionar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=rotateimage).place(x=2, y=400)
-Button(root, text='minimizar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=MinImage).place(x=2, y=450)
-Button(root, text='maximizar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=MaxImage).place(x=2, y=500)
+Button(root, text='Rotacionar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=rotateimage).place(x=2, y=400)
+Button(root, text='Minimizar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=MinImage).place(x=2, y=450)
+Button(root, text='Maximizar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=MaxImage).place(x=2, y=500)
+Button(root, text='Download', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=downloadimage).place(x=400, y=650)
 Button(root, text='transladar', height="1", width="15", bg="#04BF68", fg="#ffffff", bd="0", cursor="hand2", font="Montserrat", command=translationImage).place(x=2, y=550)
-
 root.mainloop()
