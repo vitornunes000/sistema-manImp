@@ -2,180 +2,255 @@ from tkinter import *
 from PIL import ImageTk, Image, ImageEnhance, ImageFilter
 from tkinter import filedialog, messagebox
 from pathlib import Path
+import tkinter as tk
+import shutil
+import cv2
+import numpy as np
+import os
+import keyboard
 
+# definindo front-end
 root = Tk()
-root.title("Image Editor")
-root.geometry("800x700+250+5")
-root.configure(bg="#212121")
+root.title("Sistema de Manipulação de Imagens")
+
+# obtendo o tamanho do monitor do usuário
+screen_height = root.winfo_screenheight()
+screen_width = root.winfo_screenwidth()
+
+# definindo as dimensões da janela do aplicativo
+root.geometry(f"{screen_width}x{screen_height}+0+0")
+root.state("zoomed")
 root.resizable(width=True, height=True)
+
 img_no = 0
+
+bg_image = Image.open("bgappblue.png")
+bg_image = bg_image.resize((screen_width, screen_height))  # redimensionando a imagem para o tamanho da tela
+bg_image = ImageTk.PhotoImage(bg_image)
+
+# criando um label para exibir a imagem de fundo
+background_label = tk.Label(root, image=bg_image)
+background_label.place(relx=0, rely=0, relwidth=1, relheight=1)  # Ocupa toda a tela
+
 filename = ["" for x in range(150)]
 filename[0] = "noFile"
 
-
-def openfn():
-    file = filedialog.askopenfilename(title='open')
+def openfilename():
+    file = filedialog.askopenfilename(title='abrir')
     return file
 
-
-def open_img():
-    x = openfn()
+def openimage():
+    x = openfilename()
     img = Image.open(x)
-    firstName = Path(x).stem
+    fileNameWithoutExtension = Path(x).stem
     width, height = img.size
     ratio = round(width/height, 3)
     fra = round(ratio, 3)
     if width > height:
         newHeight = round(650/fra)
-        img.resize((650, newHeight), Image.ANTIALIAS).save('img.png')
+        img.resize((650, newHeight)).save('img.png')
     else:
         newWidth = round(650*fra)
-        img.resize((newWidth, 650), Image.ANTIALIAS).save('img.png')
-    global filename, img_no
+        img.resize((newWidth, 650)).save('img.png')
+    global filename, img_no, panel
     img_no = img_no + 1
     filename[img_no] = "img.png"
     img = Image.open(filename[img_no])
+    #front-end
     img = ImageTk.PhotoImage(img)
-    panel = Label(root, image=img)
+    panel = tk.Label(root, image=img)
     panel.image = img
-    panel.place(x=150, y=40)
+    panel.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-    def update_img():
-        global filename, img_no
-        img_enhance = Image.open(filename[img_no])
-        img_enhance = ImageTk.PhotoImage(img_enhance)
-        panel = Label(root, image=img_enhance)
-        panel.configure(image=img_enhance)
-        panel.image = img_enhance
+def updateimage():
+    global filename, img_no
+    img_enhance = Image.open(filename[img_no])
+    img_enhance = ImageTk.PhotoImage(img_enhance)
+    # utilizando o panel já iniciado em "openimage"
+    panel.configure(image=img_enhance)
+    panel.image = img_enhance
+    panel.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-    def undo_change():
-        global filename, img_no
-        img_no = img_no - 1
-        if img_no < 1:
-            img_no = 1
-        img_enhance = Image.open(filename[img_no])
-        img_enhance = ImageTk.PhotoImage(img_enhance)
-        panel.configure(image=img_enhance)
-        panel.image = img_enhance
+def downloadimage():
+    global filename, img_no
+    filedownload = filedialog.askdirectory()
+    # Verificando se a foto teve alterações
+    if filename[img_no] != "img.png":
+        try:
+            # Alterar o caminho da pasta download de acordo com seu PC
+            shutil.move(filename[img_no], os.path.join(filedownload, filename[img_no]))
+            messagebox.showinfo("Sucesso!", "Imagem baixada com sucesso! Verifique sua pasta de downloads.")
+        except Exception as e: 
+            messagebox.showerror("Erro", f"Erro ao baixar a imagem: {e}")
+    else:
+        messagebox.showinfo("Inalterada", "Nenhuma imagem para baixar.")
 
-    def save_img():
-        global filename, img_no
-        img = Image.open(filename[img_no])
-        path = "C:\\Users\\kushm\\Downloads\\" #change your path here
-        img.save(path + firstName + "_edited.png")
-        messagebox.showinfo("information", "Your Image is Saved in your desired location", )
-
-    def sharpness_img():
-        global filename, img_no
-        img_enhance = Image.open(filename[img_no])
-        enhancer = ImageEnhance.Sharpness(img_enhance)
-        img_no = img_no + 1
-        enhancer.enhance(2).save(str(img_no)+'.png')
-        filename[img_no] = str(img_no)+'.png'
-        update_img()
-
-    def blur_img():
-        global filename, img_no
-        img_enhance = Image.open(filename[img_no])
-        enhancer = ImageEnhance.Sharpness(img_enhance)
-        img_no = img_no + 1
-        enhancer.enhance(0).save(str(img_no)+'.png')
-        filename[img_no] = str(img_no)+'.png'
-        update_img()
-
-    def flip_horizontal_img():
-        global filename, img_no
-        img_flipH = Image.open(filename[img_no])
-        img_no = img_no + 1
-        img_flipH.transpose(Image.FLIP_LEFT_RIGHT).save(str(img_no)+'.png')
-        filename[img_no] = str(img_no)+'.png'
-        update_img()
-
-    def flip_vertical_img():
-        global filename, img_no
-        img_flipV = Image.open(filename[img_no])
-        img_no = img_no + 1
-        img_flipV.transpose(Image.FLIP_TOP_BOTTOM).save(str(img_no)+'.png')
-        filename[img_no] = str(img_no)+'.png'
-        update_img()
-
-    def grayscale_img():
-        global filename, img_no
+def grayscaleimage():
+    global filename, img_no
+    if os.path.exists(filename[img_no]):
         img_grayscale = Image.open(filename[img_no])
         color = ImageEnhance.Color(img_grayscale)
         img_no = img_no + 1
         color.enhance(0).save(str(img_no)+'.png')
         filename[img_no] = str(img_no)+'.png'
-        update_img()
+        updateimage()
+    else:
+        messagebox.showwarning("Imagem Inexistente", "Abra uma imagem para que possa ser editada!")
 
-    def brighten_img():
-        global filename, img_no
-        img_brighten = Image.open(filename[img_no])
-        img_brighten = ImageEnhance.Brightness(img_brighten)
+def blurimage():
+    global filename, img_no
+    if os.path.exists(filename[img_no]):
+        img_blur = Image.open(filename[img_no])
+        filter = img_blur.filter(ImageFilter.BLUR)
         img_no = img_no + 1
-        img_brighten.enhance(1.1).save(str(img_no)+'.png')
+        filter.save(str(img_no)+'.png')
         filename[img_no] = str(img_no)+'.png'
-        update_img()
+        updateimage()
+    else:
+        messagebox.showwarning("Imagem Inexistente", "Abra uma imagem para que possa ser editada!")
 
-    def contrast_img():
-        global filename, img_no
-        img_contrast = Image.open(filename[img_no])
-        img_contrast = ImageEnhance.Contrast(img_contrast)
+
+def sharpenimage():
+    global filename, img_no
+    if os.path.exists(filename[img_no]):
+        img_sharpen = Image.open(filename[img_no])
+        filter = img_sharpen.filter(ImageFilter.SHARPEN)
         img_no = img_no + 1
-        img_contrast.enhance(1.1).save(str(img_no)+'.png')
+        filter.save(str(img_no)+'.png')
         filename[img_no] = str(img_no)+'.png'
-        update_img()
+        updateimage()
+    else:
+        messagebox.showwarning("Imagem Inexistente", "Abra uma imagem para que possa ser editada!")
 
-    def smooth_img():
-        global filename, img_no
-        img_smooth = Image.open(filename[img_no])
-        img_no = img_no + 1
-        img_smooth.filter(ImageFilter.SMOOTH).save(str(img_no)+'.png')
-        filename[img_no] = str(img_no)+'.png'
-        update_img()
 
-    def contour_img():
-        global filename, img_no
-        img_contour = Image.open(filename[img_no])
-        img_no = img_no + 1
-        img_contour.filter(ImageFilter.CONTOUR).save(str(img_no)+'.png')
-        filename[img_no] = str(img_no)+'.png'
-        update_img()
-
-    def emboss_img():
-        global filename, img_no
+def embossimage():
+    global filename, img_no
+    if os.path.exists(filename[img_no]):
         img_emboss = Image.open(filename[img_no])
+        filter = img_emboss.filter(ImageFilter.EMBOSS)
         img_no = img_no + 1
-        img_emboss.filter(ImageFilter.EMBOSS).save(str(img_no)+'.png')
+        filter.save(str(img_no)+'.png')
         filename[img_no] = str(img_no)+'.png'
-        update_img()
+        updateimage()
+    else:
+        messagebox.showwarning("Imagem Inexistente", "Abra uma imagem para que possa ser editada!")
 
-    def edge_img():
-        global filename, img_no
-        img_edge = Image.open(filename[img_no])
+def rotateimage():
+    global filename, img_no
+    if os.path.exists(filename[img_no]):
+        img_rotate = Image.open(filename[img_no])
+        img_rotated = img_rotate.rotate(90, expand=True)
+        img_no = img_no +1
+        img_rotated.save(str(img_no) + '.png')
+        filename[img_no] = str(img_no) + '.png'
+        updateimage()
+    else:
+        messagebox.showwarning("Imagem Inexistente", "Abra uma imagem para que possa ser editada!")
+
+
+def MinImage():
+    global filename, img_no
+    if os.path.exists(filename[img_no]):
+        img = Image.open(filename[img_no])
+        width, height = img.size
+        newHeight = int (height*0.8)
+        newWidth = int (width*0.8)
+        imageMin = img.resize((newWidth,newHeight), Image.BILINEAR)
         img_no = img_no + 1
-        img_edge.filter(ImageFilter.FIND_EDGES).save(str(img_no)+'.png')
-        filename[img_no] = str(img_no)+'.png'
-        update_img()
+        imageMin.save(str(img_no) + ".png")
+        filename[img_no] = str(img_no) + ".png"
+        updateimage()
+    else:
+        messagebox.showwarning("Imagem Inexistente", "Abra uma imagem para que possa ser editada!")
 
 
-    Button(root, text='save image', height="1", width="15", bg="#424242", fg="#ffffff", bd="0", command=save_img).place(x=115, y=2)
-    Button(root, text='undo', height="1", width="15", bg="#424242", fg="#ffffff", bd="0", command=undo_change).place(x=228, y=2)
+def MaxImage():
+    global filename, img_no
+    if os.path.exists(filename[img_no]):
+        img = Image.open(filename[img_no])
+        width, height = img.size
+        newHeight = int (height*1.2)
+        newWidth = int (width*1.2)
+        imageMax = img.resize((newWidth,newHeight), Image.BILINEAR)
+        img_no = img_no + 1
+        imageMax.save(str(img_no) + ".png")
+        filename[img_no] = str(img_no) + ".png"
+        updateimage()
+    else:
+        messagebox.showwarning("Imagem Inexistente", "Abra uma imagem para que possa ser editada!")  
 
-    Button(root, text='sharpen', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=sharpness_img).place(x=2, y=250)
-    Button(root, text='blur', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=blur_img).place(x=2, y=275)
-    Button(root, text='flip hori', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=flip_horizontal_img).place(x=2, y=300)
-    Button(root, text='flip vert', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=flip_vertical_img).place(x=2, y=325)
-    Button(root, text='grayscale', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=grayscale_img).place(x=2, y=350)
-    Button(root, text='brighten', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=brighten_img).place(x=2, y=375)
-    Button(root, text='contrast', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=contrast_img).place(x=2, y=400)
-    Button(root, text='smooth', height="1", width="10", bg="#424242", fg="#ffffff", bd="0",command=smooth_img).place(x=2, y=425)
-    Button(root, text='contour', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=contour_img).place(x=2, y=450)
-    Button(root, text='emboss', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=emboss_img).place(x=2, y=475)
-    Button(root, text='edge', height="1", width="10", bg="#424242", fg="#ffffff", bd="0", command=edge_img).place(x=2, y=500)
+#TODO: corrigir bug de label (não afeta o funcionamento)
+def translationImage():
+    global filename,img_no
+    x, y = 0, 0
+    if os.path.exists(filename[img_no]):
+        imagem = cv2.imread(filename[img_no])
 
+        # Define o deslocamento desejado (x e y)
+        deslocamento = np.float32([[1, 0, x], [0, 1, y]])
+        while True:
+            updateimage()
+            key = keyboard.read_event(suppress=True).name
 
-Button(root, text='open image', height="1", width="15", bg="#424242", fg="#ffffff", bd="0", command=open_img).place(x=2, y=2)
+            if key == 'up':
+                y -= 10
+                deslocamento = np.float32([[1, 0, x], [0, 1, y]])
+                imagem_transladada = cv2.warpAffine(imagem, deslocamento, (imagem.shape[1], imagem.shape[0]),cv2.INTER_LINEAR)
+                    # salva a imagem e exiba ela na interface
+                cv2.imwrite("imagem_transladada.png", imagem_transladada)
+                img_no = img_no +1
+                filename[img_no] = ("imagem_transladada.png")
+                updateimage()
+            elif key == 'down':
+                y += 10
+                deslocamento = np.float32([[1, 0, x], [0, 1, y]])
+                imagem_transladada = cv2.warpAffine(imagem, deslocamento, (imagem.shape[1], imagem.shape[0]),cv2.INTER_LINEAR)
+                    # salva a imagem e exiba ela na interface
+                cv2.imwrite("imagem_transladada.png", imagem_transladada)
+                img_no = img_no +1
+                filename[img_no] = ("imagem_transladada.png")
+                updateimage()
+            elif key == 'left':
+                x -= 10
+                deslocamento = np.float32([[1, 0, x], [0, 1, y]])
+                imagem_transladada = cv2.warpAffine(imagem, deslocamento, (imagem.shape[1], imagem.shape[0]),cv2.INTER_LINEAR)
+                    # salva a imagem e exiba ela na interface
+                cv2.imwrite("imagem_transladada.png", imagem_transladada)
+                img_no = img_no +1
+                filename[img_no] = ("imagem_transladada.png")
+                updateimage()
+            elif key == 'right':
+                x += 10
+                deslocamento = np.float32([[1, 0, x], [0, 1, y]])
+                imagem_transladada = cv2.warpAffine(imagem, deslocamento, (imagem.shape[1], imagem.shape[0]),cv2.INTER_LINEAR)
+                    # salva a imagem e exiba ela na interface
+                cv2.imwrite("imagem_transladada.png", imagem_transladada)
+                img_no = img_no +1
+                filename[img_no] = ("imagem_transladada.png")
+                updateimage()
+            elif key == 'esc':
+                break
+        # Aplica a translação usando o método warpAffine
+        #imagem_transladada = cv2.warpAffine(imagem, deslocamento, (imagem.shape[1]+25, imagem.shape[0]+50),cv2.INTER_LINEAR)
 
+        # salva a imagem e exiba ela na interface
+       # cv2.imwrite("imagem_transladada.png", imagem_transladada)
+        #img_no = img_no +1
+       # filename[img_no] = ("imagem_transladada.png")
+       # updateimage()
+    else:
+        messagebox.showwarning("Imagem Inexistente", "Abra uma imagem para que possa ser editada!")
 
+Button(root, text='Abrir Imagem', height="2", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=openimage).place(relx=0.001, rely=0.002)
+Button(root, text='Escala de Cinza', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=grayscaleimage).place(relx=0.001, rely=0.35)
+Button(root, text='Efeito Blur', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=blurimage).place(relx=0.001, rely=0.40)
+Button(root, text='Efeito Sharpen', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=sharpenimage).place(relx=0.001, rely=0.45)
+Button(root, text='Efeito Emboss', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=embossimage).place(relx=0.001, rely=0.50)
+Button(root, text='Rotacionar', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=rotateimage).place(relx=0.001, rely=0.55)
+Button(root, text='Minimizar', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=MinImage).place(relx=0.001, rely=0.60)
+Button(root, text='Maximizar', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=MaxImage).place(relx=0.001, rely=0.65)
+Button(root, text='Transladar', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=translationImage).place(relx=0.001, rely=0.70)
+Button(root, text='Download', height="1", width="15", bg="#56735A", fg="#FFFFFF", bd="0", cursor="hand2", font="Montserrat", command=downloadimage).place(relx=0.5, rely=0.95, anchor=tk.CENTER)
+
+#Rodar o App
 root.mainloop()
